@@ -9,7 +9,7 @@ export default function TestSetup() {
                 const client = await create()
                 console.log('Client created')
 
-                const account = await client.login('artinsubject@gmail.com')
+                const account = await client.login(process.env.NEXT_PUBLIC_GMAIL_ID as `${string}@${string}`);
                 console.log('Email verification initiated. Please check your inbox.')
 
                 const space = await client.createSpace('KnowledgeHub', { account })
