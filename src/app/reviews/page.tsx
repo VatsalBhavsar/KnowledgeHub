@@ -2,11 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/config/supabase';
-import { uploadArticleToIPFS } from '@/lib/web3Uploader'
+import { uploadArticleToIPFS } from '@/lib/web3Uploader';
+import UploadProgressModal from '@/components/UploadProgressModal';
 import Link from 'next/link';
 
 export default function ReviewsPage() {
     const [drafts, setDrafts] = useState<any[]>([]);
+    const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+    const [uploadMessage, setUploadMessage] = useState('');
+    const [showModal, setShowModal] = useState(false);
 
     const fetchDrafts = async () => {
         const { data, error } = await supabase
@@ -45,11 +49,15 @@ export default function ReviewsPage() {
     };
 
     const handlePublish = async (id: string, content: string) => {
+        setShowModal(true)
+        setUploadStatus('uploading')
+        setUploadMessage('Preparing upload...')
+
         try {
-            // Step 1: Upload to IPFS
+            setUploadMessage('Uploading to IPFS...')
             const ipfsCid = await uploadArticleToIPFS(content)
 
-            // Step 2: Update Supabase with publish status and CID
+            setUploadMessage('Saving metadata...')
             const { error } = await supabase
                 .from('drafts')
                 .update({
@@ -61,64 +69,79 @@ export default function ReviewsPage() {
                 .eq('id', id)
 
             if (error) {
-                alert(`Failed to publish: ${error.message}`)
+                setUploadStatus('error')
+                setUploadMessage(`Failed to publish: ${error.message}`)
             } else {
-                alert('✅ Article published to IPFS and saved!')
-                fetchDrafts() // Refresh the UI to hide published draft
+                setUploadStatus('success')
+                setUploadMessage('Article successfully published to IPFS!')
+                fetchDrafts()
             }
         } catch (err) {
             console.error('Error during publishing:', err)
-            alert('Something went wrong while publishing to IPFS.')
+            setUploadStatus('error')
+            setUploadMessage('Something went wrong while publishing to IPFS.')
         }
     }
 
     return (
-        <div className="max-w-4xl mx-auto py-8 text-white">
-            <h1 className="text-2xl font-bold mb-6">Review Submissions</h1>
-            {drafts.length === 0 ? (
-                <p className="text-gray-400">No drafts under review.</p>
-            ) : (
-                <ul className="space-y-6">
-                    {drafts.map((draft) => (
-                        <li key={draft.id} className="p-4 border rounded bg-zinc-900">
-                            <h2 className="text-xl font-semibold">{draft.title || 'Untitled Draft'}</h2>
-                            <p className="text-gray-400 text-sm mt-1">{draft.summary}</p>
-                            <div className="mt-4 flex gap-4">
-                                <button
-                                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-                                    onClick={() => handleReviewAction(draft.id, 'approved')}
-                                >
-                                    Approve
-                                </button>
-                                <button
-                                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                                    onClick={() => handleReviewAction(draft.id, 'rejected')}
-                                >
-                                    Reject
-                                </button>
-                                {draft.status === 'approved' && !draft.is_published && (
+        <>
+            <div className="max-w-4xl mx-auto py-8 text-white">
+                <h1 className="text-2xl font-bold mb-6">Review Submissions</h1>
+                {drafts.length === 0 ? (
+                    <p className="text-gray-400">No drafts under review.</p>
+                ) : (
+                    <ul className="space-y-6">
+                        {drafts.map((draft) => (
+                            <li key={draft.id} className="p-4 border rounded bg-zinc-900">
+                                <h2 className="text-xl font-semibold">{draft.title || 'Untitled Draft'}</h2>
+                                <p className="text-gray-400 text-sm mt-1">{draft.summary}</p>
+                                <div className="mt-4 flex gap-4">
                                     <button
-                                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-                                        onClick={() => handlePublish(draft.id, draft.content)}
+                                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                                        onClick={() => handleReviewAction(draft.id, 'approved')}
                                     >
-                                        Publish
+                                        Approve
                                     </button>
-                                )}
-                                {draft.status === 'published' && draft.is_published && (
-                                    <Link
-                                        href={`/article/${draft.id}`}
-                                        className="text-blue-400 underline text-sm mt-2 block"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                    <button
+                                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                                        onClick={() => handleReviewAction(draft.id, 'rejected')}
                                     >
-                                        🔗 View Public Article
-                                    </Link>
-                                )}
-                            </div>
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </div>
+                                        Reject
+                                    </button>
+                                    {draft.status === 'approved' && !draft.is_published && (
+                                        <button
+                                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                                            onClick={() => handlePublish(draft.id, draft.content)}
+                                        >
+                                            Publish
+                                        </button>
+                                    )}
+                                    {draft.status === 'published' && draft.is_published && (
+                                        <Link
+                                            href={`/article/${draft.id}`}
+                                            className="text-blue-400 underline text-sm mt-2 block"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            🔗 View Public Article
+                                        </Link>
+                                    )}
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+            <UploadProgressModal
+                isOpen={showModal}
+                status={uploadStatus}
+                message={uploadMessage}
+                onClose={() => {
+                    setShowModal(false)
+                    setUploadStatus('idle')
+                    setUploadMessage('')
+                }}
+            />
+        </>
     );
 }

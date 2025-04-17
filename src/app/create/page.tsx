@@ -24,7 +24,12 @@ export default function CreateArticlePage() {
         const fetchDraft = async () => {
             if (!draftId) return;
 
-            const { data, error } = await supabase.from('drafts').select('*').eq('id', draftId).single();
+            const { data, error } = await supabase
+                .from('drafts')
+                .select('*')
+                .eq('id', draftId)
+                .single();
+
             if (error) {
                 console.error('Error fetching draft:', error.message);
             } else {
@@ -41,9 +46,22 @@ export default function CreateArticlePage() {
     if (!hasMounted) return null;
 
     const handleSaveDraft = async () => {
-        const payload = { title, summary, tags, content, author: 'anonymous' };
+        if (!title.trim()) {
+            alert('Title is required to save a draft.');
+            return;
+        }
 
-        const { data, error } = draftId
+        const payload = {
+            title: title.trim(),
+            summary: summary.trim(),
+            tags,
+            content,
+            author: 'anonymous',
+            is_published: false,
+            status: 'draft',
+        };
+
+        const { error } = draftId
             ? await supabase.from('drafts').update(payload).eq('id', draftId)
             : await supabase.from('drafts').insert([payload]);
 
@@ -54,26 +72,51 @@ export default function CreateArticlePage() {
         }
     };
 
+    const isContentEmpty = (html: string) => {
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        return temp.innerText.trim() === '';
+    };
 
     const handleSubmitForReview = async () => {
-        if (!draftId) {
-            alert('Please save the draft before submitting it for review.');
+        if (!title.trim() || !summary.trim() || isContentEmpty(content)) {
+            alert('Please fill out all fields (title, summary, content) before submitting.');
             return;
         }
 
-        const { error } = await supabase
-            .from('drafts')
-            .update({
-                status: 'under_review',
-                submitted_at: new Date().toISOString(),
-            })
-            .eq('id', draftId);
+        if (!draftId) {
+            const { error } = await supabase.from('drafts').insert([
+                {
+                    title: title.trim(),
+                    summary: summary.trim(),
+                    tags,
+                    content,
+                    author: 'anonymous',
+                    is_published: false,
+                    status: 'under_review',
+                    submitted_at: new Date().toISOString(),
+                },
+            ]);
 
-        if (error) {
-            console.error('Failed to submit for review:', error.message);
-            alert('Submission failed. Please try again.');
+            if (error) {
+                alert(`Failed to submit for review: ${error.message}`);
+            } else {
+                alert('Article submitted for review!');
+            }
         } else {
-            alert('Draft submitted for review!');
+            const { error } = await supabase
+                .from('drafts')
+                .update({
+                    status: 'under_review',
+                    submitted_at: new Date().toISOString(),
+                })
+                .eq('id', draftId);
+
+            if (error) {
+                alert('Submission failed. Please try again.');
+            } else {
+                alert('Draft submitted for review!');
+            }
         }
     };
 

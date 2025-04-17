@@ -17,8 +17,8 @@ const queryClient = new QueryClient();
 
 // 🔐 Use your actual WalletConnect Project ID here:
 const config = getDefaultConfig({
-  appName: 'KnowledgeHub',
-  projectId: '742132e28024617e00172c724bb188b4',
+  appName: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_NAME!,
+  projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID!,
   chains: [sepolia],
   transports: {
     [sepolia.id]: http(),

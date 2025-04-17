@@ -85,16 +85,6 @@ export default function ViewArticlePage() {
                         <span className="text-sm text-gray-400">
                             IPFS URI: <code className="text-white">{ipfsURI}</code>
                         </span>
-
-                        {/* Social Share Link (e.g., Twitter share) */}
-                        <a
-                            href={`https://twitter.com/intent/tweet?text=Check%20out%20this%20decentralized%20article!&url=${encodeURIComponent(gatewayURL!)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-400 text-sm underline mt-2"
-                        >
-                            🐦 Share on Twitter
-                        </a>
                     </div>
                 </div>
             )}

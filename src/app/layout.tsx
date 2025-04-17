@@ -12,10 +12,10 @@ import Sidebar from '@/components/Sidebar';
 export default function RootLayout({ children }: { children: ReactNode }) {
 	return (
 		<html lang="en">
-			<body>
+			<body className="bg-white text-black dark:bg-zinc-900 dark:text-white">
 				<ReduxProvider store={store}>
 					<WalletProvider>
-						<HeaderWrapper>{children}</HeaderWrapper>
+						<AppShell>{children}</AppShell>
 					</WalletProvider>
 				</ReduxProvider>
 			</body>
@@ -23,17 +23,21 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 	);
 }
 
-function HeaderWrapper({ children }: { children: ReactNode }) {
-	const pathname = usePathname()
-	const isLogin = pathname === '/login'
+function AppShell({ children }: { children: ReactNode }) {
+	const pathname = usePathname();
+	const isLogin = pathname === '/login';
+
+	if (isLogin) return <>{children}</>;
 
 	return (
-		<>
-			{!isLogin && <Header />}
-			<div className="flex">
-				{!isLogin && <Sidebar />}
-				<main className="flex-1 p-6">{children}</main>
+		<div className="h-screen flex flex-col">
+			<Header />
+			<div className="flex flex-1 overflow-hidden">
+				<Sidebar />
+				<main className="flex-1 overflow-y-auto p-6 bg-white dark:bg-zinc-900">
+					{children}
+				</main>
 			</div>
-		</>
-	)
+		</div>
+	);
 }
