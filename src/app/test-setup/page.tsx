@@ -1,25 +1,33 @@
-'use client'
-import { create } from '@web3-storage/w3up-client'
-import { useEffect } from 'react'
+'use client';
+import { create } from '@web3-storage/w3up-client';
+import { useEffect } from 'react';
 
 export default function TestSetup() {
-    useEffect(() => {
-        (async () => {
-            try {
-                const client = await create()
-                console.log('Client created')
+  useEffect(() => {
+    (async () => {
+      try {
+        const client = await create();
+        console.log('Client created');
 
-                const account = await client.login(process.env.NEXT_PUBLIC_GMAIL_ID as `${string}@${string}`);
-                console.log('Email verification initiated. Please check your inbox.')
+        console.log(process.env.NEXT_PUBLIC_GMAIL_ID);
 
-                const space = await client.createSpace('KnowledgeHub', { account })
-                await client.setCurrentSpace(space.did())
-                console.log('🚀 DID:', space.did())
-            } catch (error) {
-                console.error('❌ Error during setup:', error)
-            }
-        })()
-    }, [])
+        const account = await client.login(
+          process.env.NEXT_PUBLIC_GMAIL_ID as `${string}@${string}`
+        );
+        console.log('Email verification initiated. Please check your inbox.');
 
-    return <p>Check the console for setup progress. Ensure you've verified your email.</p>
+        const space = await client.createSpace('KnowledgeHub', { account });
+        await client.setCurrentSpace(space.did());
+        console.log('🚀 DID:', space.did());
+      } catch (error) {
+        console.error('❌ Error during setup:', error);
+      }
+    })();
+  }, []);
+
+  return (
+    <p>
+      Check the console for setup progress. Ensure you've verified your email.
+    </p>
+  );
 }

@@ -1,21 +1,48 @@
-import { create } from '@web3-storage/w3up-client'
+import { create } from '@web3-storage/w3up-client';
 
-export async function uploadArticleToIPFS(content: string) {
-    const client = await create()
+import { ethers } from 'ethers';
+import abiValues from '../../artifacts/contracts/KnowledgeHub.sol/KnowledgeHub.json';
 
-    const spaces = await client.spaces()
-    const space = spaces.find(s => s.did() === process.env.NEXT_PUBLIC_WEB3_STORAGE_DID)
+const abi = abiValues.abi;
 
-    if (!space) {
-        throw new Error('Web3.Storage space not found. Make sure the DID is correct and linked to this identity.')
-    }
+export async function uploadArticleToIPFS(title: string, content: string) {
+  const client = await create();
 
-    await client.setCurrentSpace(space.did())
+  const spaces = await client.spaces();
+  const space = spaces.find(
+    (s) => s.did() === process.env.NEXT_PUBLIC_WEB3_STORAGE_DID
+  );
 
-    const file = new File([content], 'article.txt', { type: 'text/plain' })
+  if (!space) {
+    throw new Error(
+      'Web3.Storage space not found. Make sure the DID is correct and linked to this identity.'
+    );
+  }
 
-    const cid = await client.uploadFile(file)
-    console.log('✅ Uploaded to IPFS with CID:', cid.toString())
+  await client.setCurrentSpace(space.did());
 
-    return cid.toString()
+  const file = new File([content], 'article.txt', { type: 'text/plain' });
+
+  const cid = await client.uploadFile(file);
+
+  console.log('✅ Uploaded to IPFS with CID:', cid.toString());
+
+  return cid.toString();
+}
+
+export async function publishArticle(title: string, ipfsCid: string) {
+  const contractAddress = process.env.CONTRACT_ADDRESS as string;
+  if (!window.ethereum) return alert('Install MetaMask!');
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
+  const contract = new ethers.Contract(contractAddress, abi, signer);
+
+  try {
+    const tx = await contract.publishArticle(title, ipfsCid);
+    await tx.wait();
+    alert('Article published!');
+  } catch (error) {
+    console.error(error);
+    alert('Failed to publish article.');
+  }
 }

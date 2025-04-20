@@ -36,21 +36,21 @@ npm install
 
 #### Create a `drafts` table with the following fields:
 
-| Field Name     | Type      | Notes |
-|----------------|-----------|-------|
-| id             | UUID (PK) | Primary key |
-| title          | Text      |        |
-| summary        | Text      |        |
-| content        | Text      |        |
-| tags           | Text[]    | Array of tags |
-| author         | Text      |        |
-| is_published   | Boolean   | Default: false |
-| published_at   | Timestamp |        |
-| status         | Text      | draft, under_review, approved, etc. |
-| submitted_at   | Timestamp |        |
-| reviewed_by    | Text[]    |        |
-| ipfs_cid       | Text      |        |
-| created_at     | Timestamp | Default: now() |
+| Field Name   | Type      | Notes                               |
+| ------------ | --------- | ----------------------------------- |
+| id           | UUID (PK) | Primary key                         |
+| title        | Text      |                                     |
+| summary      | Text      |                                     |
+| content      | Text      |                                     |
+| tags         | Text[]    | Array of tags                       |
+| author       | Text      |                                     |
+| is_published | Boolean   | Default: false                      |
+| published_at | Timestamp |                                     |
+| status       | Text      | draft, under_review, approved, etc. |
+| submitted_at | Timestamp |                                     |
+| reviewed_by  | Text[]    |                                     |
+| ipfs_cid     | Text      |                                     |
+| created_at   | Timestamp | Default: now()                      |
 
 ---
 
@@ -110,6 +110,7 @@ This project uses **self-hosted TinyMCE**.
 - Assets are copied from `node_modules` to `public/tinymce/`
 
 Script in `package.json`:
+
 ```
 "postinstall": "node scripts/copy-tinymce-assets.js"
 ```
@@ -130,9 +131,26 @@ Visit: `http://localhost:3000`
 
 - Wallet connection is via **RainbowKit + Wagmi**
 - Uses **Sepolia Testnet**
-- Currently no smart contracts – used for identity association
 
 ---
+
+### 11. Deploying contract
+
+Create an account in https://developer.metamask.io/ or https://www.alchemy.com/
+
+- use NETWORK_ENDPOINT_ID (by selecting any of the network mainly sepolia)
+- use METAMASK_PRIVATE_KEY which can be get from Metamask extension.
+
+To get eth for testing use testnet in the metamask and use https://www.alchemy.com/faucets/ethereum-sepolia for getting free eth for testing.
+
+```
+npx hardhat compile
+npx hardhat run scripts/deploy.js --network sepolia
+```
+
+If want to use existing/deployed contract address 0xaF2FdF83968A9126FFc96453b58370dFaCC747E8
+
+verify contract- https://sepolia.etherscan.io/address
 
 Feel free to contribute or fork the project for custom enhancements.
 
