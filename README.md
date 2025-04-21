@@ -152,6 +152,8 @@ If want to use existing/deployed contract address 0xaF2FdF83968A9126FFc96453b583
 
 verify contract- https://sepolia.etherscan.io/address
 
+- Replace NEXT_PUBLIC_CONTRACT_ADDRESS with your contract address
+
 Feel free to contribute or fork the project for custom enhancements.
 
 ## Learn More

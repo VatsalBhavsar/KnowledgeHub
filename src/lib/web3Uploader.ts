@@ -1,5 +1,4 @@
 import { create } from '@web3-storage/w3up-client';
-
 import { ethers } from 'ethers';
 import abiValues from '../../artifacts/contracts/KnowledgeHub.sol/KnowledgeHub.json';
 
@@ -31,7 +30,7 @@ export async function uploadArticleToIPFS(title: string, content: string) {
 }
 
 export async function publishArticle(title: string, ipfsCid: string) {
-  const contractAddress = process.env.CONTRACT_ADDRESS as string;
+  const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as string;
   if (!window.ethereum) return alert('Install MetaMask!');
   const provider = new ethers.BrowserProvider(window.ethereum);
   const signer = await provider.getSigner();

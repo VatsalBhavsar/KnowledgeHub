@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { Home, PencilLine, FileText, ClipboardList } from 'lucide-react'; // Make sure lucide-react is installed
 import { useAccount } from 'wagmi';
+import { useEffect, useState } from 'react';
 
 const navItems = [
   { label: 'Home', href: '/', icon: Home },
@@ -16,6 +17,17 @@ const navItems = [
 export default function Sidebar() {
   const { address, isConnected } = useAccount();
   const pathname = usePathname();
+
+  const [hydrated, setHydrated] = useState(false);
+
+  // Ensure the component is hydrated before rendering secure links
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
+
+  if (!hydrated) {
+    return null; // Avoid rendering until hydration is complete
+  }
 
   return (
     <aside className="min-w-[220px] h-screen px-6 py-6 border-r bg-white border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800 transition-colors">
