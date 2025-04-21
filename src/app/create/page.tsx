@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { supabase } from '@/config/supabase'
 import { useSearchParams } from 'next/navigation'
 import TagInput from '@/components/TagInput'
@@ -9,7 +9,7 @@ import { useAccount, useEnsName } from 'wagmi'
 
 const Editor = dynamic(() => import('@/components/Editor.client'), { ssr: false })
 
-export default function CreateArticlePage() {
+function CreateForm() {
     const [hasMounted, setHasMounted] = useState(false)
     const [title, setTitle] = useState('')
     const [summary, setSummary] = useState('')
@@ -209,5 +209,13 @@ export default function CreateArticlePage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function CreateArticlePage() {
+    return (
+        <Suspense fallback={<p className="text-white text-center mt-10">Loading...</p>}>
+            <CreateForm />
+        </Suspense>
     )
 }
