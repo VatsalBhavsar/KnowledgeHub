@@ -5,6 +5,14 @@ import { supabase } from '@/config/supabase'
 import { uploadArticleToIPFS } from '@/lib/web3Uploader'
 import UploadProgressModal from '@/components/UploadProgressModal'
 import Link from 'next/link'
+import {
+    useAccount,
+    useWriteContract,
+    useWaitForTransactionReceipt,
+    usePublicClient
+} from 'wagmi'
+import { articleManagerABI } from '@/lib/contracts/articleManagerABI'
+import { articleManagerAddress } from '@/lib/contracts/articleManagerAddress'
 
 export default function ReviewsPage() {
     const [drafts, setDrafts] = useState<any[]>([])
@@ -12,6 +20,52 @@ export default function ReviewsPage() {
     const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
     const [uploadMessage, setUploadMessage] = useState('')
     const [showModal, setShowModal] = useState(false)
+
+    const [txHash, setTxHash] = useState<`0x${string}` | undefined>()
+    const [ipfsCid, setIpfsCid] = useState('')
+    const [idToUpdate, setIdToUpdate] = useState('')
+    const [articleIndex, setArticleIndex] = useState<number | null>(null)
+
+    const { address, isConnected } = useAccount()
+    const { writeContractAsync } = useWriteContract()
+    const publicClient = usePublicClient()
+
+    const { isLoading: isWaiting, isSuccess: isConfirmed, isError: txError } = useWaitForTransactionReceipt({
+        hash: txHash,
+        query: {
+            enabled: !!txHash,
+        },
+    })
+
+    // ✅ Wait for confirmation then update Supabase
+    useEffect(() => {
+        const updateSupabase = async () => {
+            if (isConfirmed && ipfsCid && idToUpdate && articleIndex !== null) {
+                setUploadMessage('Saving metadata...')
+                const { error } = await supabase
+                    .from('drafts')
+                    .update({
+                        is_published: true,
+                        published_at: new Date().toISOString(),
+                        status: 'published',
+                        ipfs_cid: ipfsCid,
+                        article_index: articleIndex
+                    })
+                    .eq('id', idToUpdate)
+
+                if (error) {
+                    setUploadStatus('error')
+                    setUploadMessage(`Failed to publish: ${error.message}`)
+                } else {
+                    setUploadStatus('success')
+                    setUploadMessage('Article published to IPFS and blockchain!')
+                    fetchDrafts()
+                }
+            }
+        }
+
+        updateSupabase()
+    }, [isConfirmed])
 
     const fetchDrafts = async () => {
         setLoading(true)
@@ -51,38 +105,54 @@ export default function ReviewsPage() {
         }
     }
 
-    const handlePublish = async (id: string, content: string) => {
+    const handlePublish = async (id: string, title: string, content: string) => {
         setShowModal(true)
         setUploadStatus('uploading')
         setUploadMessage('Preparing upload...')
 
         try {
             setUploadMessage('Uploading to IPFS...')
-            const ipfsCid = await uploadArticleToIPFS(content)
+            const ipfs = await uploadArticleToIPFS(content)
 
-            setUploadMessage('Saving metadata...')
-            const { error } = await supabase
-                .from('drafts')
-                .update({
-                    is_published: true,
-                    published_at: new Date().toISOString(),
-                    status: 'published',
-                    ipfs_cid: ipfsCid,
-                })
-                .eq('id', id)
-
-            if (error) {
+            if (!isConnected) {
                 setUploadStatus('error')
-                setUploadMessage(`Failed to publish: ${error.message}`)
-            } else {
-                setUploadStatus('success')
-                setUploadMessage('Article successfully published to IPFS!')
-                fetchDrafts()
+                setUploadMessage('Wallet not connected.')
+                return
             }
+
+            if (!publicClient) {
+                setUploadStatus('error')
+                setUploadMessage('Failed to access public client')
+                return
+            }
+
+            // ✅ Get the current article count BEFORE publishing
+            const count = await publicClient.readContract({
+                address: articleManagerAddress,
+                abi: articleManagerABI,
+                functionName: 'articleCount',
+            })
+
+            const nextIndex = Number(count) // this is the index the new article will get
+            setArticleIndex(nextIndex)
+
+            setUploadMessage('Sending transaction to blockchain...')
+
+            const hash = await writeContractAsync({
+                address: articleManagerAddress,
+                abi: articleManagerABI,
+                functionName: 'publishArticle',
+                args: [title, ipfs],
+            })
+
+            setUploadMessage('Waiting for confirmation...')
+            setTxHash(hash as `0x${string}`)
+            setIpfsCid(ipfs)
+            setIdToUpdate(id)
         } catch (err) {
-            console.error('Error during publishing:', err)
+            console.error('❌ Error publishing:', err)
             setUploadStatus('error')
-            setUploadMessage('Something went wrong while publishing to IPFS.')
+            setUploadMessage('Something went wrong during publish.')
         }
     }
 
@@ -97,19 +167,19 @@ export default function ReviewsPage() {
                     <p className="text-gray-400">No drafts under review.</p>
                 ) : (
                     <ul className="space-y-6">
-                        {drafts.map(draft => (
+                        {drafts.map((draft) => (
                             <li
                                 key={draft.id}
                                 className="rounded-lg bg-zinc-800 shadow-sm p-5 border border-zinc-700 hover:shadow-md transition-shadow"
                             >
-                                <h2 className="text-xl font-semibold text-white mb-1">
-                                    {draft.title || 'Untitled Draft'}
-                                </h2>
+                                <h2 className="text-xl font-semibold text-white mb-1">{draft.title || 'Untitled Draft'}</h2>
 
                                 <p className="text-gray-400 text-sm">{draft.summary}</p>
 
                                 <div className="flex justify-between items-center text-xs text-gray-500 mt-3">
-                                    <span>📅 Submitted: {new Date(draft.submitted_at || draft.created_at).toLocaleDateString()}</span>
+                                    <span>
+                                        📅 Submitted: {new Date(draft.submitted_at || draft.created_at).toLocaleDateString()}
+                                    </span>
                                 </div>
 
                                 <div className="mt-4 flex gap-3 flex-wrap">
@@ -128,7 +198,7 @@ export default function ReviewsPage() {
                                     {draft.status === 'approved' && !draft.is_published && (
                                         <button
                                             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-                                            onClick={() => handlePublish(draft.id, draft.content)}
+                                            onClick={() => handlePublish(draft.id, draft.title, draft.content)}
                                         >
                                             Publish
                                         </button>

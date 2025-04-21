@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/config/supabase'
 import { useSearchParams } from 'next/navigation'
 import TagInput from '@/components/TagInput'
+import { useAccount, useEnsName } from 'wagmi'
 
 const Editor = dynamic(() => import('@/components/Editor.client'), { ssr: false })
 
@@ -17,6 +18,11 @@ export default function CreateArticlePage() {
     const [errors, setErrors] = useState({ title: '', summary: '' })
     const searchParams = useSearchParams()
     const draftId = searchParams.get('id')
+
+    const { address } = useAccount()
+    const { data: ensName } = useEnsName({ address })
+
+    const authorName = ensName || (address ? `0x${address.slice(0, 6)}...${address.slice(-4)}` : 'anonymous')
 
     useEffect(() => {
         setHasMounted(true)
@@ -58,9 +64,10 @@ export default function CreateArticlePage() {
             summary: summary.trim(),
             tags,
             content,
-            author: 'anonymous',
+            author: authorName,
             is_published: false,
             status: 'draft',
+            wallet_address: address || null,
         }
 
         const { error } = draftId
@@ -105,10 +112,11 @@ export default function CreateArticlePage() {
             summary: summary.trim(),
             tags: tags.map(tag => tag.trim().toLowerCase()),
             content,
-            author: 'anonymous',
+            author: authorName,
             is_published: false,
             status: 'under_review',
             submitted_at: new Date().toISOString(),
+            wallet_address: address || null,
         }
 
         if (!draftId) {
@@ -124,6 +132,8 @@ export default function CreateArticlePage() {
                 .update({
                     status: 'under_review',
                     submitted_at: new Date().toISOString(),
+                    wallet_address: address || null,
+                    author: authorName,
                 })
                 .eq('id', draftId)
 
@@ -180,9 +190,7 @@ export default function CreateArticlePage() {
                     {errors.summary && <p className="text-red-400 text-sm mt-1">{errors.summary}</p>}
                 </div>
 
-
                 <TagInput tags={tags} setTags={setTags} />
-
                 <Editor content={content} setContent={setContent} />
 
                 <div className="flex gap-4 mt-6">
