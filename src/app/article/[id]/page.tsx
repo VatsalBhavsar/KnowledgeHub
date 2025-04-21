@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '@/config/supabase'
+import { useReadContract } from 'wagmi'
+import { articleManagerABI } from '@/lib/contracts/articleManagerABI'
+import { articleManagerAddress } from '@/lib/contracts/articleManagerAddress'
 
 export default function ViewArticlePage() {
     const { id } = useParams()
@@ -31,11 +34,33 @@ export default function ViewArticlePage() {
         fetchArticle()
     }, [id])
 
+    // ✅ Read from smart contract (on-chain verification)
+    const {
+        data: articleOnChain,
+        isLoading: isLoadingChain,
+        isError: isChainError,
+        isSuccess: isChainSuccess,
+    } = useReadContract({
+        address: articleManagerAddress,
+        abi: articleManagerABI,
+        functionName: 'articles',
+        args: [article?.article_index],
+        query: {
+            enabled: !!article?.article_index,
+        },
+    })
+
+    const gatewayURL = article?.ipfs_cid ? `https://w3s.link/ipfs/${article.ipfs_cid}` : null
+    const ipfsURI = article?.ipfs_cid ? `ipfs://${article.ipfs_cid}` : null
+    const verified = articleOnChain as {
+        author: `0x${string}`
+        ipfsHash: string
+        title: string
+        timestamp: bigint
+    }
+
     if (loading) return <p className="text-white text-center mt-10">Loading article...</p>
     if (errorMsg) return <p className="text-red-400 text-center mt-10">{errorMsg}</p>
-
-    const gatewayURL = article.ipfs_cid ? `https://w3s.link/ipfs/${article.ipfs_cid}` : null
-    const ipfsURI = article.ipfs_cid ? `ipfs://${article.ipfs_cid}` : null
 
     return (
         <div className="max-w-3xl mx-auto px-4 py-10 text-white">
@@ -45,10 +70,10 @@ export default function ViewArticlePage() {
                     <p className="text-gray-400 text-sm">{article.summary}</p>
                 </div>
 
-                {/* ✅ Decentralized badge */}
-                {article.ipfs_cid && (
+                {/* ✅ On-chain verified badge */}
+                {isChainSuccess && verified?.ipfsHash === article.ipfs_cid && (
                     <span className="text-xs font-semibold bg-green-700 text-white px-3 py-1 rounded ml-4">
-                        ✅ On-chain
+                        ✅ Verified on-chain
                     </span>
                 )}
             </div>
@@ -65,7 +90,7 @@ export default function ViewArticlePage() {
                 dangerouslySetInnerHTML={{ __html: article.content }}
             />
 
-            {/* ✅ IPFS Info + Social Sharing */}
+            {/* ✅ IPFS Info */}
             {article.ipfs_cid && (
                 <div className="mt-8 border-t border-zinc-700 pt-4">
                     <h4 className="text-sm text-green-400 mb-2">📦 Decentralized Copy</h4>
@@ -86,6 +111,18 @@ export default function ViewArticlePage() {
                             IPFS URI: <code className="text-white">{ipfsURI}</code>
                         </span>
                     </div>
+                </div>
+            )}
+
+            {/* ✅ Verified author info */}
+            {isChainSuccess && verified?.ipfsHash === article.ipfs_cid && (
+                <div className="mt-6 text-sm text-gray-400">
+                    <p>
+                        🧾 This article is permanently stored on-chain by{' '}
+                        <span className="text-white font-mono">
+                            {verified.author.slice(0, 6)}...{verified.author.slice(-4)}
+                        </span>
+                    </p>
                 </div>
             )}
 
