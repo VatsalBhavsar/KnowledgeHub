@@ -3,12 +3,11 @@
 import dynamic from 'next/dynamic'
 import { useEffect, useState, Suspense } from 'react'
 import { supabase } from '@/config/supabase'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import TagInput from '@/components/TagInput'
 import { useAccount, useEnsName } from 'wagmi'
 import WalletGuard from '@/components/WalletGuard'
 import toast from 'react-hot-toast'
-import { useRouter } from 'next/navigation'
 
 const Editor = dynamic(() => import('@/components/Editor.client'), { ssr: false })
 
@@ -19,13 +18,13 @@ function CreateForm() {
     const [tags, setTags] = useState<string[]>([])
     const [content, setContent] = useState('')
     const [errors, setErrors] = useState({ title: '', summary: '' })
+
     const searchParams = useSearchParams()
     const draftId = searchParams.get('id')
     const router = useRouter()
 
     const { address } = useAccount()
     const { data: ensName } = useEnsName({ address })
-
     const authorName = ensName || (address ? `0x${address.slice(0, 6)}...${address.slice(-4)}` : 'anonymous')
 
     useEffect(() => {
@@ -42,13 +41,13 @@ function CreateForm() {
                 .eq('id', draftId)
                 .single()
 
-            if (error) {
-                console.error('Error fetching draft:', error.message)
-            } else {
+            if (!error && data) {
                 setTitle(data.title)
                 setSummary(data.summary)
                 setTags(data.tags || [])
                 setContent(data.content)
+            } else {
+                console.error('Error fetching draft:', error?.message)
             }
         }
 
@@ -59,9 +58,7 @@ function CreateForm() {
 
     const handleSaveDraft = async () => {
         const newErrors = { title: '', summary: '' }
-
         if (!title.trim()) newErrors.title = 'Title is required.'
-
         if (newErrors.title) {
             setErrors(newErrors)
             return
@@ -81,23 +78,19 @@ function CreateForm() {
         }
 
         if (draftId) {
-            // ✅ Update existing draft
             const { error } = await supabase.from('drafts').update(payload).eq('id', draftId)
-
             if (error) {
                 toast.error(`Failed to save draft: ${error.message}`)
             } else {
                 toast.success('Draft saved!')
             }
         } else {
-            // ✅ Create new draft and redirect
             const { data, error } = await supabase.from('drafts').insert([payload]).select().single()
-
             if (error) {
                 toast.error(`Failed to save draft: ${error.message}`)
             } else if (data?.id) {
                 toast.success('Draft saved!')
-                router.push(`/create?id=${data.id}`)  // ⬅️ Redirect to new draft
+                router.push(`/create?id=${data.id}`)
             }
         }
     }
@@ -168,67 +161,57 @@ function CreateForm() {
 
     return (
         <WalletGuard>
-            <div className="max-w-5xl mx-auto py-8 px-4">
-                <h1 className="text-3xl font-bold mb-6">Create Article</h1>
+            <div className="max-w-5xl mx-auto py-10 px-6 text-black dark:text-white transition-colors duration-300">
+                <h1 className="text-4xl font-bold tracking-tight mb-8">📝 Start Writing</h1>
 
-                <div className="space-y-4">
-                    {/* TITLE FIELD */}
-                    <div>
-                        <input
-                            type="text"
-                            className={`w-full border px-4 py-2 rounded-md focus:outline-none transition ${errors.title
-                                ? 'border-red-500 focus:ring-1 focus:ring-red-500'
-                                : 'border-zinc-700 focus:ring-1 focus:ring-blue-500'
-                                }`}
-                            placeholder="Article Title"
-                            value={title}
-                            onChange={(e) => {
-                                setTitle(e.target.value)
-                                if (errors.title && e.target.value.trim()) {
-                                    setErrors((prev) => ({ ...prev, title: '' }))
-                                }
-                            }}
-                        />
-                        {errors.title && <p className="text-red-400 text-sm mt-1">{errors.title}</p>}
-                    </div>
+                {/* Title */}
+                <input
+                    type="text"
+                    placeholder="Enter your article title here..."
+                    className={`w-full text-3xl font-semibold mb-4 bg-transparent border-none border-b-2 border-zinc-300 dark:border-zinc-700 focus:outline-none focus:ring-0 placeholder:text-gray-400 dark:placeholder:text-gray-500`}
+                    value={title}
+                    onChange={(e) => {
+                        setTitle(e.target.value)
+                        if (errors.title) setErrors(prev => ({ ...prev, title: '' }))
+                    }}
+                />
+                {errors.title && <p className="text-red-400 text-sm mb-4">{errors.title}</p>}
 
-                    {/* SUMMARY FIELD */}
-                    <div>
-                        <textarea
-                            className={`w-full border px-4 py-2 rounded-md focus:outline-none transition ${errors.summary
-                                ? 'border-red-500 focus:ring-1 focus:ring-red-500'
-                                : 'border-zinc-700 focus:ring-1 focus:ring-blue-500'
-                                }`}
-                            placeholder="Short Summary"
-                            value={summary}
-                            rows={3}
-                            onChange={(e) => {
-                                setSummary(e.target.value)
-                                if (errors.summary && e.target.value.trim()) {
-                                    setErrors((prev) => ({ ...prev, summary: '' }))
-                                }
-                            }}
-                        />
-                        {errors.summary && <p className="text-red-400 text-sm mt-1">{errors.summary}</p>}
-                    </div>
+                {/* Summary */}
+                <textarea
+                    rows={2}
+                    placeholder="Write a short summary for your article..."
+                    className="w-full resize-none mb-6 bg-transparent text-base border-none border-b-2 border-zinc-300 dark:border-zinc-700 focus:outline-none focus:ring-0 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                    value={summary}
+                    onChange={(e) => {
+                        setSummary(e.target.value)
+                        if (errors.summary) setErrors(prev => ({ ...prev, summary: '' }))
+                    }}
+                />
+                {errors.summary && <p className="text-red-400 text-sm mb-4">{errors.summary}</p>}
 
-                    <TagInput tags={tags} setTags={setTags} />
+                {/* Tags */}
+                <TagInput tags={tags} setTags={setTags} />
+
+                {/* Editor */}
+                <div className="mt-6">
                     <Editor content={content} setContent={setContent} />
+                </div>
 
-                    <div className="flex gap-4 mt-6">
-                        <button
-                            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-                            onClick={handleSaveDraft}
-                        >
-                            Save Draft
-                        </button>
-                        <button
-                            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-                            onClick={handleSubmitForReview}
-                        >
-                            Submit for Review
-                        </button>
-                    </div>
+                {/* Action Buttons */}
+                <div className="flex gap-4 mt-10">
+                    <button
+                        className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
+                        onClick={handleSaveDraft}
+                    >
+                        💾 Save Draft
+                    </button>
+                    <button
+                        className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
+                        onClick={handleSubmitForReview}
+                    >
+                        🚀 Submit for Review
+                    </button>
                 </div>
             </div>
         </WalletGuard>
@@ -237,7 +220,7 @@ function CreateForm() {
 
 export default function CreateArticlePage() {
     return (
-        <Suspense fallback={<p className="text-white text-center mt-10">Loading...</p>}>
+        <Suspense fallback={<p className="text-center text-gray-400 dark:text-gray-500 mt-10">Loading...</p>}>
             <CreateForm />
         </Suspense>
     )

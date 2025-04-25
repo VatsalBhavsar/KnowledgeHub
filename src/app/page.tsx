@@ -26,24 +26,31 @@ export default function ArticlesPage() {
 		fetchArticles()
 	}, [])
 
-	if (loading) return <p className="text-white text-center mt-10">Loading articles...</p>
+	if (loading)
+		return (
+			<p className="text-center mt-10 text-black dark:text-white transition-colors duration-300">
+				Loading articles...
+			</p>
+		)
 
 	return (
-		<div className="max-w-5xl mx-auto px-4 py-10 text-white">
+		<div className="max-w-5xl mx-auto px-4 py-10 text-black dark:text-white transition-colors duration-300">
 			<h1 className="text-3xl font-bold mb-6">📚 Published Articles</h1>
 
 			{articles.length === 0 ? (
-				<p className="text-gray-400">No published articles found.</p>
+				<p className="text-gray-600 dark:text-gray-400">
+					No published articles found.
+				</p>
 			) : (
 				<ul className="space-y-6">
 					{articles.map(article => (
 						<li
 							key={article.id}
-							className="rounded-lg bg-zinc-800 shadow-sm p-5 border border-zinc-700 hover:shadow-md transition-shadow"
+							className="rounded-lg border shadow-sm p-5 transition-shadow hover:shadow-md bg-gray-100 border-gray-300 dark:bg-zinc-800 dark:border-zinc-700"
 						>
 							<div className="flex items-start justify-between">
 								<Link href={`/article/${article.id}`}>
-									<h2 className="text-xl font-semibold text-white hover:text-blue-400 transition">
+									<h2 className="text-xl font-semibold hover:text-blue-600 dark:hover:text-blue-400 transition">
 										{article.title}
 									</h2>
 								</Link>
@@ -55,9 +62,11 @@ export default function ArticlesPage() {
 								)}
 							</div>
 
-							<p className="text-gray-400 text-sm mt-2">{article.summary}</p>
+							<p className="text-sm text-gray-700 dark:text-gray-400 mt-2">
+								{article.summary}
+							</p>
 
-							<div className="flex justify-between items-center text-xs text-gray-400 mt-3">
+							<div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400 mt-3">
 								{article.author && <span>👤 {article.author}</span>}
 								<span>📅 {new Date(article.published_at).toLocaleDateString()}</span>
 							</div>
