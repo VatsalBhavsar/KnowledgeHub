@@ -32,14 +32,11 @@ export default function ReviewsPage() {
     const { writeContractAsync } = useWriteContract()
     const publicClient = usePublicClient()
 
-    const { isLoading: isWaiting, isSuccess: isConfirmed, isError: txError } = useWaitForTransactionReceipt({
+    const { isLoading: isWaiting, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
         hash: txHash,
-        query: {
-            enabled: !!txHash,
-        },
+        query: { enabled: !!txHash },
     })
 
-    // ✅ Wait for confirmation then update Supabase
     useEffect(() => {
         const updateSupabase = async () => {
             if (isConfirmed && ipfsCid && idToUpdate && articleIndex !== null) {
@@ -51,7 +48,7 @@ export default function ReviewsPage() {
                         published_at: new Date().toISOString(),
                         status: 'published',
                         ipfs_cid: ipfsCid,
-                        article_index: articleIndex
+                        article_index: articleIndex,
                     })
                     .eq('id', idToUpdate)
 
@@ -78,7 +75,7 @@ export default function ReviewsPage() {
             .order('submitted_at', { ascending: false })
 
         if (error) {
-            console.error('Error fetching drafts for review:', error.message)
+            console.error('Error fetching drafts:', error.message)
         } else {
             setDrafts(data)
         }
@@ -121,21 +118,18 @@ export default function ReviewsPage() {
                 setUploadMessage('Wallet not connected.')
                 return
             }
-
             if (!publicClient) {
                 setUploadStatus('error')
                 setUploadMessage('Failed to access public client')
                 return
             }
 
-            // ✅ Get the current article count BEFORE publishing
             const count = await publicClient.readContract({
                 address: articleManagerAddress,
                 abi: articleManagerABI,
                 functionName: 'articleCount',
             })
-
-            const nextIndex = Number(count) // this is the index the new article will get
+            const nextIndex = Number(count)
             setArticleIndex(nextIndex)
 
             setUploadMessage('Sending transaction to blockchain...')
@@ -160,28 +154,25 @@ export default function ReviewsPage() {
 
     return (
         <WalletGuard>
-            <div className="max-w-5xl mx-auto py-8 px-4 text-white">
+            <div className="max-w-5xl mx-auto py-8 px-4 text-black dark:text-white transition-colors duration-300">
                 <h1 className="text-2xl font-bold mb-6">🔍 Review Submissions</h1>
 
                 {loading ? (
-                    <p className="text-gray-400">Loading submissions...</p>
+                    <p className="text-gray-500 dark:text-gray-400">Loading submissions...</p>
                 ) : drafts.length === 0 ? (
-                    <p className="text-gray-400">No drafts under review.</p>
+                    <p className="text-gray-500 dark:text-gray-400">No drafts under review.</p>
                 ) : (
                     <ul className="space-y-6">
                         {drafts.map((draft) => (
                             <li
                                 key={draft.id}
-                                className="rounded-lg bg-zinc-800 shadow-sm p-5 border border-zinc-700 hover:shadow-md transition-shadow"
+                                className="rounded-lg bg-gray-100 dark:bg-zinc-800 shadow-sm p-5 border border-gray-300 dark:border-zinc-700 hover:shadow-md transition"
                             >
-                                <h2 className="text-xl font-semibold text-white mb-1">{draft.title || 'Untitled Draft'}</h2>
+                                <h2 className="text-xl font-semibold mb-1">{draft.title || 'Untitled Draft'}</h2>
+                                <p className="text-gray-600 dark:text-gray-400 text-sm">{draft.summary}</p>
 
-                                <p className="text-gray-400 text-sm">{draft.summary}</p>
-
-                                <div className="flex justify-between items-center text-xs text-gray-500 mt-3">
-                                    <span>
-                                        📅 Submitted: {new Date(draft.submitted_at || draft.created_at).toLocaleDateString()}
-                                    </span>
+                                <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400 mt-3">
+                                    <span>📅 Submitted: {new Date(draft.submitted_at || draft.created_at).toLocaleDateString()}</span>
                                 </div>
 
                                 <div className="mt-4 flex gap-3 flex-wrap">
@@ -201,6 +192,7 @@ export default function ReviewsPage() {
                                             </button>
                                         </>
                                     )}
+
                                     {draft.status === 'approved' && !draft.is_published && draft.wallet_address === address && (
                                         <button
                                             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
@@ -213,7 +205,7 @@ export default function ReviewsPage() {
                                     {draft.status === 'published' && draft.is_published && (
                                         <Link
                                             href={`/article/${draft.id}`}
-                                            className="text-blue-400 underline text-sm mt-2 block"
+                                            className="text-blue-500 underline text-sm mt-2 block"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                         >
