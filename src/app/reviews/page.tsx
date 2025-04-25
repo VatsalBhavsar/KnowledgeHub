@@ -13,6 +13,8 @@ import {
 } from 'wagmi'
 import { articleManagerABI } from '@/lib/contracts/articleManagerABI'
 import { articleManagerAddress } from '@/lib/contracts/articleManagerAddress'
+import toast from 'react-hot-toast'
+import WalletGuard from '@/components/WalletGuard'
 
 export default function ReviewsPage() {
     const [drafts, setDrafts] = useState<any[]>([])
@@ -98,9 +100,9 @@ export default function ReviewsPage() {
             .eq('id', id)
 
         if (error) {
-            alert(`Failed to update status: ${error.message}`)
+            toast.error(`Failed to update status: ${error.message}`)
         } else {
-            alert(`Draft ${action}!`)
+            toast.success(`Draft ${action}!`)
             fetchDrafts()
         }
     }
@@ -157,7 +159,7 @@ export default function ReviewsPage() {
     }
 
     return (
-        <>
+        <WalletGuard>
             <div className="max-w-5xl mx-auto py-8 px-4 text-white">
                 <h1 className="text-2xl font-bold mb-6">🔍 Review Submissions</h1>
 
@@ -183,19 +185,23 @@ export default function ReviewsPage() {
                                 </div>
 
                                 <div className="mt-4 flex gap-3 flex-wrap">
-                                    <button
-                                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-                                        onClick={() => handleReviewAction(draft.id, 'approved')}
-                                    >
-                                        Approve
-                                    </button>
-                                    <button
-                                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                                        onClick={() => handleReviewAction(draft.id, 'rejected')}
-                                    >
-                                        Reject
-                                    </button>
-                                    {draft.status === 'approved' && !draft.is_published && (
+                                    {draft.wallet_address !== address && (
+                                        <>
+                                            <button
+                                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                                                onClick={() => handleReviewAction(draft.id, 'approved')}
+                                            >
+                                                Approve
+                                            </button>
+                                            <button
+                                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                                                onClick={() => handleReviewAction(draft.id, 'rejected')}
+                                            >
+                                                Reject
+                                            </button>
+                                        </>
+                                    )}
+                                    {draft.status === 'approved' && !draft.is_published && draft.wallet_address === address && (
                                         <button
                                             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
                                             onClick={() => handlePublish(draft.id, draft.title, draft.content)}
@@ -231,6 +237,6 @@ export default function ReviewsPage() {
                     setUploadMessage('')
                 }}
             />
-        </>
+        </WalletGuard>
     )
 }

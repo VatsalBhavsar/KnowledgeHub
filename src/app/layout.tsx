@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Provider as ReduxProvider } from 'react-redux';
 import { store } from '@/store';
 import { WalletProvider } from '@/config/walletConfig';
+import CustomToaster from '@/components/CustomToaster'
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 
@@ -15,6 +16,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 			<body className="bg-white text-black dark:bg-zinc-900 dark:text-white">
 				<ReduxProvider store={store}>
 					<WalletProvider>
+						<CustomToaster />
 						<AppShell>{children}</AppShell>
 					</WalletProvider>
 				</ReduxProvider>
