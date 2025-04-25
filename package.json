@@ -30,6 +30,7 @@
     "next-themes": "^0.4.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hot-toast": "^2.5.2",
     "react-redux": "^9.2.0",
     "tinymce": "^7.8.0",
     "viem": "^2.26.5",
