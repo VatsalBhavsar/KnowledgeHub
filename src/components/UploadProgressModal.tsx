@@ -1,24 +1,26 @@
-'use client'
+'use client';
 
-import { Dialog } from '@headlessui/react'
-import { XMarkIcon } from '@heroicons/react/24/outline'
-import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid'
+import { Dialog } from '@headlessui/react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
 
 interface UploadProgressModalProps {
-    isOpen: boolean
-    status: 'idle' | 'uploading' | 'success' | 'error'
-    message: string
-    onClose: () => void
+    isOpen: boolean;
+    status: 'idle' | 'uploading' | 'success' | 'error';
+    message: string;
+    progress: number;
+    onClose: () => void;
 }
 
 export default function UploadProgressModal({
     isOpen,
     status,
     message,
+    progress,
     onClose,
 }: UploadProgressModalProps) {
     return (
-        <Dialog open={isOpen} onClose={() => { }} className="relative z-50">
+        <Dialog open={isOpen} onClose={() => { }} className="relative z-[100]">
             {/* Background Blur */}
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true" />
 
@@ -42,9 +44,11 @@ export default function UploadProgressModal({
                     <div className="flex flex-col items-center justify-center gap-4">
                         {status === 'uploading' && (
                             <>
-                                {/* Progress bar */}
                                 <div className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
-                                    <div className="h-full bg-blue-500 animate-pulse rounded-full" style={{ width: '70%' }} />
+                                    <div
+                                        className="h-full bg-blue-500 transition-all duration-500"
+                                        style={{ width: `${Math.min(progress, 100)}%` }}
+                                    />
                                 </div>
 
                                 <p className="text-sm text-zinc-500 dark:text-gray-300 animate-pulse">{message}</p>
@@ -68,5 +72,5 @@ export default function UploadProgressModal({
                 </Dialog.Panel>
             </div>
         </Dialog>
-    )
+    );
 }

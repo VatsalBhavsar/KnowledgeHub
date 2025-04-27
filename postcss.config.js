@@ -1,4 +1,4 @@
-// postcss.config.js
+// ✅ CORRECT
 module.exports = {
   plugins: {
     '@tailwindcss/postcss': {},

@@ -1,21 +1,20 @@
-'use client'
+'use client';
 
-import '@rainbow-me/rainbowkit/styles.css'
+import '@rainbow-me/rainbowkit/styles.css';
 import {
   RainbowKitProvider,
   getDefaultConfig,
   darkTheme,
   lightTheme,
-} from '@rainbow-me/rainbowkit'
+} from '@rainbow-me/rainbowkit';
+import { WagmiProvider } from 'wagmi';
+import { sepolia } from 'wagmi/chains';
+import { http } from 'wagmi';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactNode, useEffect, useState } from 'react';
+import { useTheme } from 'next-themes'; // ✅ USE NEXT-THEMES for Wallet Theme Sync
 
-import { WagmiProvider } from 'wagmi'
-import { sepolia } from 'wagmi/chains'
-import { http } from 'wagmi'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { ReactNode } from 'react'
-import { useTheme } from '@/components/ThemeProvider'
-
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
 const config = getDefaultConfig({
   appName: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_NAME!,
@@ -24,21 +23,29 @@ const config = getDefaultConfig({
   transports: {
     [sepolia.id]: http(),
   },
-})
+});
 
 export function WalletProvider({ children }: { children: ReactNode }) {
-  const { theme } = useTheme()
+  const { resolvedTheme } = useTheme(); // ✅ NOT 'theme' but 'resolvedTheme'
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || !resolvedTheme) return null;
 
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider
-          theme={theme === 'dark' ? darkTheme() : lightTheme()}
+          key={resolvedTheme} // ✅ Correct key for dynamic remount
           modalSize="compact"
+          theme={resolvedTheme === 'dark' ? darkTheme({}) : lightTheme({})}
         >
           {children}
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
-  )
+  );
 }
