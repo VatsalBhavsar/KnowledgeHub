@@ -4,16 +4,16 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
 import {
-    Home,
+    Compass,
     PencilLine,
     FileText,
     ClipboardList,
 } from 'lucide-react' // Make sure lucide-react is installed
 
 const navItems = [
-    { label: 'Home', href: '/', icon: Home },
+    { label: 'Explore', href: '/', icon: Compass },
     { label: 'Create', href: '/create', icon: PencilLine },
-    { label: 'Drafts', href: '/drafts', icon: FileText },
+    { label: 'My Articles', href: '/my-articles', icon: FileText },
     { label: 'Reviews', href: '/reviews', icon: ClipboardList },
 ]
 

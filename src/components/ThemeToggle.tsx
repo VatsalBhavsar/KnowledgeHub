@@ -1,15 +1,15 @@
-'use client'
+'use client';
 
-import { useTheme } from '@/components/ThemeProvider'
-import { SunIcon, MoonIcon } from '@heroicons/react/24/solid'
-import { AnimatePresence, motion } from 'framer-motion'
+import { useTheme } from 'next-themes'; // ✅ Corrected
+import { SunIcon, MoonIcon } from '@heroicons/react/24/solid';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export default function ThemeToggle() {
-    const { theme, setTheme } = useTheme()
+    const { theme, setTheme } = useTheme();
 
     const toggleTheme = () => {
-        setTheme(theme === 'light' ? 'dark' : 'light')
-    }
+        setTheme(theme === 'light' ? 'dark' : 'light');
+    };
 
     return (
         <button
@@ -20,10 +20,10 @@ export default function ThemeToggle() {
             <AnimatePresence mode="wait" initial={false}>
                 <motion.span
                     key={theme}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    transition={{ duration: 0.25 }}
+                    initial={{ opacity: 0, scale: 0.8, rotate: -90 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    exit={{ opacity: 0, scale: 0.8, rotate: 90 }}
+                    transition={{ duration: 0.4 }}
                     className="block"
                 >
                     {theme === 'light' ? (
@@ -34,5 +34,5 @@ export default function ThemeToggle() {
                 </motion.span>
             </AnimatePresence>
         </button>
-    )
+    );
 }
