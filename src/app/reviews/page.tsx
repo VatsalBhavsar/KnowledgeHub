@@ -33,7 +33,7 @@ export default function ReviewsPage() {
     const [idToUpdate, setIdToUpdate] = useState('');
     const [articleIndex, setArticleIndex] = useState<number | null>(null);
 
-    const { address, isConnected } = useAccount();
+    const { address = '', isConnected } = useAccount();
     const { writeContractAsync } = useWriteContract();
     const publicClient = usePublicClient();
 
@@ -41,11 +41,6 @@ export default function ReviewsPage() {
         hash: txHash,
         query: { enabled: !!txHash },
     });
-
-    if (!address) {
-        console.error('Wallet not connected');
-        return;
-    }
 
     useEffect(() => {
         const updateSupabase = async () => {
